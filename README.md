@@ -14,3 +14,6 @@
 
 3. lalu jalankan service dengan command berikut
 - php artisan serve
+
+## Postman collection
+https://www.getpostman.com/collections/856d167696e52e20a23c
