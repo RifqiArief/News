@@ -14,16 +14,21 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::post('/register', "App\Http\Controllers\AuthController@register");
-Route::post('/login', "App\Http\Controllers\AuthController@login");
 
-Route::group(['middleware' => 'auth:api'], function(){
+Route::group(['middleware' => ['cors', 'json.response']], function(){
+    Route::post('/register', "App\Http\Controllers\AuthController@register");
+    Route::post('/login', "App\Http\Controllers\AuthController@login");
+});
+
+Route::middleware('auth:api')->group(function () {
     Route::get('/get-all', 'App\Http\Controllers\NewsController@getAll');
+    Route::post('/get-detail', 'App\Http\Controllers\NewsController@getDetail');
     Route::post('/create', 'App\Http\Controllers\NewsController@create');
     Route::post('/delete', 'App\Http\Controllers\NewsController@delete');
     Route::post('/update', 'App\Http\Controllers\NewsController@update');
-});
-
-// Route::middleware('auth:api')->get('/user', function (Request $request) {
-//     return $request->user();
+    Route::get('/image/{fileName}', 'App\Http\Controllers\NewsController@getImage');
+//     Route::get('/image/{filename}', function ($filename)
+// {
+//     return Image::make(storage_path('public/' . $filename))->response();
 // });
+});

@@ -14,7 +14,7 @@ class CreateNewsDetailTable extends Migration
     public function up()
     {
         Schema::create('news_detail', function (Blueprint $table) {
-            $table->bigIncrements('id_news_detial');            
+            $table->bigIncrements('id_news_detail');            
             $table->bigInteger('id_user');
             $table->bigInteger('id_news');
             $table->text('content');

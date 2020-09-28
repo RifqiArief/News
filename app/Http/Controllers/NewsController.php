@@ -11,9 +11,49 @@ use App\Models\News;
 use App\Models\NewsDetail;
 use DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use Intervention\Image\ImageManagerStatic as Image;
 
 class NewsController extends Controller
 {
+    public function saveImage($file)
+    {
+        try{
+            $extension = $file->extension();
+            $fileName = Carbon::now()->timestamp . '.' . $extension;
+            $path = Storage::putFileAs('public/images', $file, $fileName);
+     
+            $res = array(
+                'code'      => true,
+                'message'   => $fileName
+            );
+    
+            return $res;
+        }catch(\Exception $ex){
+            $res = array(
+                'code'      => false,
+                'message'   => 'gagal menyimpan gambar, '. $ex->getMessage(),
+            );
+
+            return $res;
+        }
+    }
+
+    public function getImage($fileName){
+        try{
+            $storagePath = storage_path('public/images/' . $fileName);
+            return Image::make($storagePath)->response();
+    
+        } catch(\Exception $ex) {
+            $res = array(
+                'code'      => 99,
+                'message'   => $ex->getMessage(),
+            );
+            return response()->json($res, 200);
+        }
+    }
+
     public function create(Request $request) {
         if ($request->user()->id_role == 1){
            
@@ -34,11 +74,21 @@ class NewsController extends Controller
             $idUser     = $request->user()->id;
             $namaUser   = $request->user()->name;
 
+            $saveImage = $this->saveImage($request->image); 
+
+            if($saveImage['code'] == false){
+                $res = array(
+                    'code'      => 99,
+                    'message'   =>  $saveImage['message']
+                );
+                return response()->json($res, 200);
+            }
+            
             try{
                 $news = new News;
                 $news->source       = $request->source;
                 $news->title        = $request->title;
-                $news->image        = $request->image;
+                $news->image        = $saveImage['message'];
                 $news->created_by   = $request->user()->name;
                 
                 $news->save();
@@ -72,11 +122,12 @@ class NewsController extends Controller
     }
 
     public function getAll(){
-        $news = DB::table('news')
-                ->select('id_news','source', 'title', 'image', 'created_at as publised_at')
-                ->whereNull('deleted_at')
-                ->orderBy('created_at', 'asc')
-                ->get();
+        $news = DB::table('news_detail as d')
+                ->select('d.id_news_detail as id_news', 'n.source', 'n.title', 'n.image', 'n.created_at as published_at')
+                ->join('news as n', 'd.id_news', '=', 'n.id_news')
+                ->whereNull('n.deleted_at')
+                ->orderBy('n.created_at', 'asc')
+                ->paginate(10);
 
         $res = array(
             'code'      => 0,
@@ -86,8 +137,42 @@ class NewsController extends Controller
         return response()->json($res, 200);
     }
 
-    public function getDetail(){
+    public function getDetail(Request $request){
+        $validator = Validator::make($request->all(), [
+            'id_news'       => 'required',
+        ]);
 
+        if ($validator->fails()) {
+            $res = array(
+                'code'      => 99,
+                'message'   => $validator->messages()->first(),
+            );
+            return response()->json($res, 200);
+        }
+
+        try{
+            $news = DB::table('news_detail as d')
+                    ->select('u.name as author', 'n.source', 'n.title', 'n.image', 'd.content', 'n.created_at as published_at')
+                    ->join('users as u', 'd.id_user', '=', 'u.id')
+                    ->join('news as n', 'd.id_news', '=', 'n.id_news')
+                    ->where('d.id_news_detail', '=', $request->id_news)
+                    ->whereNull('n.deleted_at')
+                    ->first();
+
+            $res = array(
+                'code'      => 0,
+                'message'   => 'sukses',
+                'data'      => $news
+            );
+            return response()->json($res, 200);
+
+        }catch(\Exception $ex) {
+            $res = array(
+                'code'      => 99,
+                'message'   => $ex->getMessage(),
+            );
+            return response()->json($res, 200);
+        }
     }
 
     public function delete(Request $request) {
@@ -166,7 +251,7 @@ class NewsController extends Controller
 
                 NewsDetail::where('id_news', $request->id_news)
                     ->update([
-                        'content'       => $request->title,
+                        'content'       => $request->content,
                     ]);
 
                 $res = array(
