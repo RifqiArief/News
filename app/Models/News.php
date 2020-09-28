@@ -12,6 +12,7 @@ class News extends Model
     use SoftDeletes;
 
     protected $table = 'news';
+    protected $guarded = [];
 
     protected $fillable = [
         'id_news',
@@ -21,4 +22,14 @@ class News extends Model
         'created_by',
         'delete_by',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable')->whereNull('parent_id');
+    }
 }

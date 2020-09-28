@@ -27,6 +27,9 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/delete', 'App\Http\Controllers\NewsController@delete');
     Route::post('/update', 'App\Http\Controllers\NewsController@update');
     Route::get('/image/{fileName}', 'App\Http\Controllers\NewsController@getImage');
+    Route::post('/comment', 'App\Http\Controllers\CommentController@comment');
+    Route::post('/reply', 'App\Http\Controllers\CommentController@reply');
+    
 //     Route::get('/image/{filename}', function ($filename)
 // {
 //     return Image::make(storage_path('public/' . $filename))->response();

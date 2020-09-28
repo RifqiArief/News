@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use App\Models\News;
 use App\Models\NewsDetail;
+use App\Models\Comment;
 use DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -159,10 +160,21 @@ class NewsController extends Controller
                     ->whereNull('n.deleted_at')
                     ->first();
 
+            $comment = DB::table('comments as c')
+                    ->select('c.id','c.parent_id', 'u.name','c.comment','c.created_at')
+                    ->join('users as u', 'c.user_id', '=', 'u.id')
+                    ->orderBy('c.created_at', 'asc')
+                    ->get();
+
+            $newsData = array(
+                'news'      => $news,
+                'comment'   => $comment,
+            );
+
             $res = array(
                 'code'      => 0,
                 'message'   => 'sukses',
-                'data'      => $news
+                'data'      => $newsData
             );
             return response()->json($res, 200);
 
